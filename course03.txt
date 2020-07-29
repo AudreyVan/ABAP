@@ -1,0 +1,149 @@
+*&---------------------------------------------------------------------*
+*& Report ZPROGRAM3
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZPROGRAM3.
+*-----------define internal table--------*
+*----------自定义类型的内表---------*
+TYPES:BEGIN OF ty_itab1,    "结构类型
+  field1 type char10,
+  field2 type int2,
+  END OF ty_itab1.
+TYPES:t_itab1 TYPE ty_itab1 occurs 0.   "表类型
+TYPES:t_itab2 TYPE TABLE OF ty_itab1.   "表类型
+DATA:itab1 TYPE TABLE OF ty_itab1,    "不带表头的一张内表
+     itab2 TYPE t_itab1,
+     itab3 TYPE t_itab2.
+*----------直接定义----------*
+DATA:BEGIN OF ITAB5 OCCURS 0,    "定义了内表，同时定义了同名工作区
+  field1 TYPE char10,
+  field2 TYPE int2,
+  END OF ITAB5.
+*----------参考定义---------*
+DATA:itab4 LIKE itab1.    "参考已定义的内表
+DATA:itab6 TYPE TABLE OF SFLIGHT.    "参考数据库表定义内表
+"DATA:itab7 TYPE TABLE OF ZSCHANGE.    "参考结构定义内表
+*---------排序表，哈希表---------*
+DATA itab8 TYPE SORTED TABLE OF ty_itab1 WITH UNIQUE KEY field1.
+DATA itab9 TYPE HASHED TABLE OF SFLIGHT WITH UNIQUE KEY CARRID.
+*--------带表头的内表----------*
+DATA itab10 TYPE TABLE OF ty_itab1 WITH HEADER LINE.
+*---------定义工作区--------*
+DATA:ls_itab1 TYPE ty_itab1.
+
+*--------内表处理------*
+*--------添加条目到标准表---------*
+ls_itab1-field1 = '00001'.
+ls_itab1-field2 = 00001.
+INSERT ls_itab1 INTO itab1 INDEX 1.
+APPEND ls_itab1 TO itab1.
+COLLECT ls_itab1 INTO itab1.
+
+*---------添加条目到排序表----------*
+INSERT ls_itab1 INTO itab8 INDEX 1.
+ls_itab1-field1 = '00002'.
+ls_itab1-field2 = 00002.
+APPEND ls_itab1 TO itab8.
+COLLECT ls_itab1 INTO itab8.
+
+*----------添加一个内表到另一个内表里---------*
+APPEND LINES OF itab1 TO itab2.
+APPEND LINES OF itab1 FROM 1 TO 2 TO itab2.
+INSERT LINES OF itab1 INTO itab2 INDEX 2.
+
+*----------更新+定位行---------*
+ls_itab1-field1 = 'field1'.
+ls_itab1-field2 = 999.
+DATA:ls_itab2 TYPE ty_itab1.
+ls_itab2-field1 = 'modify'.
+ls_itab2-field2 = 567.
+MODIFY itab2 FROM ls_itab1 INDEX 2.
+MODIFY itab2 FROM ls_itab1 INDEX 3 TRANSPORTING field1.
+MODIFY itab2 FROM ls_itab2 TRANSPORTING field2 WHERE field1 = '00001'.
+
+*---------排序并删除--------*
+SORT itab2 BY field1 field2.
+DELETE ADJACENT DUPLICATES FROM itab2 COMPARING ALL FIELDS.    "所有字段都匹配后删除
+
+*------------删除数据---------*
+*DELETE itab2 WHERE field1 = '00001' AND field2 = '567'.
+*ls_itab2-field1 = 'field1'.
+*ls_itab2-field2 = '999'.
+*DELETE TABLE itab2 FROM ls_itab2.
+*DELETE itab2 INDEX 1.
+
+*----------读取数据---------*
+CLEAR ls_itab2.
+READ TABLE itab2 INTO ls_itab2 INDEX 1.
+CLEAR ls_itab2.
+READ TABLE itab2 INTO ls_itab2 WITH KEY field1 = '00001'.
+CLEAR ls_itab2.
+LOOP AT itab2 INTO ls_itab2 WHERE field1 = 'field1'.
+WRITE : / ls_itab2-field2.
+ENDLOOP.
+
+*---------带表头的内表的操作---------*
+CLEAR ls_itab2.      "清空工作区
+ls_itab2-field1 = 1.
+ls_itab2-field2 = 1.
+APPEND ls_itab2 TO itab10.
+itab10-field1 = 2.
+itab10-field2 = 2.
+APPEND itab10 TO itab10.
+
+
+*------------SQL-----------*
+DATA sitab TYPE TABLE OF spfli WITH HEADER LINE.
+SELECT
+  carrid connid airpfrom airpto
+  FROM spfli
+  into CORRESPONDING FIELDS OF TABLE sitab
+  WHERE carrid = 'LH'.
+CHECK SY-SUBRC = 0.
+LOOP AT sitab.
+WRITE: /'sitab-carrid:', sitab-carrid,
+      'sitab-connid:', sitab-connid,
+       'sitab-airpfrom:', sitab-airpfrom,
+       'sitab-airpto:', sitab-airpto.
+ENDLOOP.
+WRITE SY-ULINE.
+
+*------------SELECT+标准函数-----------*
+DATA:counts TYPE I, total TYPE P DECIMALS 2, average TYPE F.
+DATA:connid LIKE sbook-connid.
+
+*SELECT connid COUNT(*) SUM( luggweight ) AVG( luggweight )
+*INTO (connid, counts, total, average)
+*FROM sbook
+*GROUP BY connid.
+*  CHECK SY-SUBRC = 0.
+*  WRITE: / 'SY-DBCNT = :', sy-dbcnt,
+*         / 'CONNID = :', connid,
+*         / 'TOTAL = :', total,
+*         / 'AVERAGE = :', average.
+*  CHECK total > 10.
+*  WRITE: /'THE SUM WEIGHT MORE THAN 10'.
+*ENDSELECT.
+
+*------------表连接--------------*
+DATA:BEGIN OF xflight OCCURS 0,
+      carrid TYPE spfli-carrid,
+      airpfrom LIKE spfli-airpfrom,
+      airpto LIKE spfli-airpto,
+      fldate LIKE sflight-fldate,
+      deptime LIKE spfli-deptime,
+END OF xflight.
+
+SELECT a~carrid a~airpfrom a~airpto b~fldate a~deptime INTO TABLE xflight
+FROM spfli AS a INNER JOIN sflight AS b
+ON a~carrid = b~carrid AND a~connid = b~connid
+UP TO 5 ROWS.
+LOOP AT xflight.
+  WRITE: / 'Airpfrom = ', xflight-airpfrom, 'to: ', xflight-airpto, 'Flydate = ', xflight-fldate.
+ENDLOOP.
+
+*-------------UPDATE-------------*
+UPDATE SFLIGHT SET CURRENCY = 'RMB' WHERE CARRID = 'AA' AND CONNID = '17'.
+CHECK SY-SUBRC = 0.
+WRITE: /'UPDATE SUCCESS!'.
