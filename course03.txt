@@ -147,3 +147,42 @@ ENDLOOP.
 UPDATE SFLIGHT SET CURRENCY = 'RMB' WHERE CARRID = 'AA' AND CONNID = '17'.
 CHECK SY-SUBRC = 0.
 WRITE: /'UPDATE SUCCESS!'.
+
+
+*-------------insert---------*
+DATA:wa_sflight TYPE sflight,       "define a work area
+     lt_sflight TYPE TABLE OF sflight.      "define an internal table
+SELECT SINGLE * FROM sflight INTO wa_sflight WHERE carrid = 'AA' AND connid = '17'.
+wa_sflight-fldate = sy-datum.
+*INSERT sflight FROM wa_sflight.
+*IF sy-subrc = 0.
+*  WRITE : /'insert success!'.
+*ENDIF.
+*wa_sflight-carrid = 'UA'.
+*wa_sflight-connid = '80'.
+*APPEND wa_sflight TO lt_sflight.
+*wa_sflight-connid = '90'.
+*APPEND wa_sflight TO lt_sflight.
+*wa_sflight-connid = '70'.
+*APPEND wa_sflight TO lt_sflight.
+*INSERT sflight FROM TABLE lt_sflight.
+*IF sy-subrc = 0.
+*  WRITE : /'insert the internal table success!'.
+*ENDIF.
+
+*--------------delete-------------*
+*DELETE FROM sflight WHERE fldate = sy-datum.
+*IF sy-subrc = 0.
+*  WRITE : /'delete success!'.
+*ENDIF.
+
+*-----------modify---------*
+*MODIFY sflight FROM wa_sflight.
+*IF sy-subrc = 0.
+*  WRITE : /'modify success!'.
+*ENDIF.
+wa_sflight-planetype = '757F'.
+MODIFY sflight FROM wa_sflight.
+IF sy-subrc = 0.
+  WRITE : /'modify success again!'.
+ENDIF.
