@@ -1,0 +1,66 @@
+*&---------------------------------------------------------------------*
+*& Report ZPRACTICE02
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZPRACTICE02.
+
+*-----------practice01-------------*
+TYPES:BEGIN OF ty_itab1,
+  BOOKNO TYPE I,
+  BOOKNAME TYPE char10,
+  ZUOYE TYPE char10,
+  PRICE TYPE P DECIMALS 2,
+END OF ty_itab1.
+DATA itable1 TYPE TABLE OF ty_itab1.
+
+
+*--------------practice02----------*
+DATA:ls_itab1 TYPE ty_itab1.
+ls_itab1-BOOKNO = '1'.
+ls_itab1-BOOKNAME = 'TEST'.
+ls_itab1-ZUOYE = 'MARK'.
+ls_itab1-PRICE = 55.
+APPEND ls_itab1 TO itable1.
+CLEAR ls_itab1.
+ls_itab1-BOOKNO = '2'.
+ls_itab1-BOOKNAME = 'ERRO'.
+ls_itab1-ZUOYE = 'WRITE'.
+ls_itab1-PRICE = 43.
+APPEND ls_itab1 TO itable1.
+CLEAR ls_itab1.
+ls_itab1-BOOKNO = '3'.
+ls_itab1-BOOKNAME = 'PRO'.
+ls_itab1-ZUOYE = 'BACKER'.
+ls_itab1-PRICE = 67.
+APPEND ls_itab1 TO itable1.
+CLEAR ls_itab1.
+ls_itab1-BOOKNO = '4'.
+ls_itab1-BOOKNAME = 'CHINESE'.
+ls_itab1-ZUOYE = 'QINCHAO'.
+ls_itab1-PRICE = 88.
+APPEND ls_itab1 TO itable1.
+
+*--------------practice03------------*
+CLEAR ls_itab1.
+ls_itab1-BOOKNO = '5'.
+ls_itab1-BOOKNAME = 'INSERT'.
+ls_itab1-ZUOYE = 'INSERT'.
+ls_itab1-PRICE = 36.
+INSERT ls_itab1 INTO itable1 INDEX 3.
+
+*-------------practice04------------*
+DELETE itable1 INDEX 4.
+
+*-----------  practice05------------*
+DATA:itable2 LIKE itable1.
+APPEND LINES OF itable1 TO itable2.
+
+*-----------practice06---------*
+SORT itable1 BY PRICE.
+
+*----------practice07---------*
+CLEAR ls_itab1.
+ls_itab1-PRICE = 55.
+MODIFY itable1 FROM ls_itab1 INDEX 2 TRANSPORTING PRICE.
+BREAK-POINT.
