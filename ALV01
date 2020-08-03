@@ -1,0 +1,187 @@
+*&---------------------------------------------------------------------*
+*& Report ZPROGRAM_AUDREY
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zprogram_audrey.
+
+*------------first step: declare ALV relevant variables------------*
+TYPE-POOLS:slis.
+DATA:lt_fieldcat TYPE slis_t_fieldcat_alv,     "存储fieldcat的内表
+     wa_fieldcat TYPE slis_fieldcat_alv,
+     ls_layout   TYPE slis_layout_alv.         "ALV格式控制的结构体：layout
+DATA lv_colpos TYPE int2.
+
+*----------second step: define internal table------------*
+TYPES:BEGIN OF ty_alvshow,
+        vbeln TYPE vbeln_va,    "sales document
+        erdat TYPE vbak-erdat,  "date on which record was created
+        ernam TYPE vbak-ernam,  "name of person who created the object
+        kunnr TYPE vbak-kunnr,  "sold-to party
+        posnr TYPE vbap-posnr,  "sales document item
+        matnr TYPE vbap-matnr,  "article number
+        matkl TYPE vbap-matkl,  "merchandise categoty
+        zmeng TYPE vbap-zmeng,  "target quantity in sales units
+        zieme TYPE vbap-zieme,  "target quantity UoM
+        werks TYPE vbap-werks,  "site(own or external)
+        lgort TYPE vbap-lgort,  "storage location
+      END OF ty_alvshow.
+DATA:lt_alvshow TYPE TABLE OF ty_alvshow,
+     wa_alvshow TYPE ty_alvshow.
+
+*-------------third step: read data-------------*
+SELECT a~vbeln a~erdat a~ernam  kunnr posnr matnr matkl zmeng zieme werks lgort
+FROM vbak AS a INNER JOIN vbap AS b
+ON a~vbeln = b~vbeln
+INTO TABLE lt_alvshow
+UP TO 100 ROWS.
+
+*-------------fourth step: ALV format control-----------*
+ls_layout-zebra = 'X'.
+ls_layout-detail_popup = 'X'.
+ls_layout-detail_titlebar = 'detail message'.
+ls_layout-f2code = '&ETA'.
+ls_layout-colwidth_optimize = 'X'.
+
+"fieldcat
+
+"sales document setting
+lv_colpos = 1.
+wa_fieldcat-fieldname = 'VBELN'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-key = 'X'.
+wa_fieldcat-datatype = 'CHAR'.
+wa_fieldcat-outputlen = '10'.
+wa_fieldcat-seltext_m = 'sales document'.
+APPEND wa_fieldcat TO lt_fieldcat.
+CLEAR wa_fieldcat.
+"document date setting
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'ERDAT'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'DATS'.
+wa_fieldcat-outputlen = '8'.
+wa_fieldcat-seltext_m = 'document date'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"person name
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'ERNAM'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'CHAR'.
+wa_fieldcat-outputlen = '12'.
+wa_fieldcat-seltext_m = 'person name'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"sold-to party
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'KUNNR'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'CHAR'.
+wa_fieldcat-outputlen = '10'.
+wa_fieldcat-seltext_m = 'sold-to party'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"sales document item
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'POSNR'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'NUMC'.
+wa_fieldcat-outputlen = '6'.
+wa_fieldcat-seltext_m = 'sales document item'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"article number
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'MATNR'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'CHAR'.
+wa_fieldcat-outputlen = '40'.
+wa_fieldcat-seltext_m = 'article number'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"merchandise categoty
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'MATKL'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'CHAR'.
+wa_fieldcat-outputlen = '9'.
+wa_fieldcat-seltext_m = 'merchandise categoty'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"target quantity in sales units
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'ZMENG'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'QUAN'.
+wa_fieldcat-outputlen = '13'.
+wa_fieldcat-seltext_m = 'target quantity in sales units'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"target quantity UoM
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'ZIEME'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-datatype = 'UNIT'.
+wa_fieldcat-outputlen = '3'.
+wa_fieldcat-seltext_m = 'target quantity UoM'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"site(own or external)
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'WERKS'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-ref_tabname = 'VBAP'.
+APPEND wa_fieldcat TO lt_fieldcat.
+"storage location
+lv_colpos = lv_colpos + 1.
+wa_fieldcat-fieldname = 'LGORT'.
+wa_fieldcat-col_pos = lv_colpos.
+wa_fieldcat-ref_tabname = 'VBAP'.
+APPEND wa_fieldcat TO lt_fieldcat.
+
+*----------fifth step: display ALV-----------*
+CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+  EXPORTING
+*   I_INTERFACE_CHECK                 = ' '
+*   I_BYPASSING_BUFFER                = ' '
+*   I_BUFFER_ACTIVE                   = ' '
+*   I_CALLBACK_PROGRAM                = ' '
+*   I_CALLBACK_PF_STATUS_SET          = ' '
+*   I_CALLBACK_USER_COMMAND           = ' '
+*   I_CALLBACK_TOP_OF_PAGE            = ' '
+*   I_CALLBACK_HTML_TOP_OF_PAGE       = ' '
+*   I_CALLBACK_HTML_END_OF_LIST       = ' '
+*   I_STRUCTURE_NAME                  =
+*   I_BACKGROUND_ID                   = ' '
+*   I_GRID_TITLE  =
+*   I_GRID_SETTINGS                   =
+    is_layout     = ls_layout
+    it_fieldcat   = lt_fieldcat
+*   IT_EXCLUDING  =
+*   IT_SPECIAL_GROUPS                 =
+*   IT_SORT       =
+*   IT_FILTER     =
+*   IS_SEL_HIDE   =
+*   I_DEFAULT     = 'X'
+*   I_SAVE        = ' '
+*   IS_VARIANT    =
+*   IT_EVENTS     =
+*   IT_EVENT_EXIT =
+*   IS_PRINT      =
+*   IS_REPREP_ID  =
+*   I_SCREEN_START_COLUMN             = 0
+*   I_SCREEN_START_LINE               = 0
+*   I_SCREEN_END_COLUMN               = 0
+*   I_SCREEN_END_LINE                 = 0
+*   I_HTML_HEIGHT_TOP                 = 0
+*   I_HTML_HEIGHT_END                 = 0
+*   IT_ALV_GRAPHICS                   =
+*   IT_HYPERLINK  =
+*   IT_ADD_FIELDCAT                   =
+*   IT_EXCEPT_QINFO                   =
+*   IR_SALV_FULLSCREEN_ADAPTER        =
+*   O_PREVIOUS_SRAL_HANDLER           =
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER           =
+*   ES_EXIT_CAUSED_BY_USER            =
+  TABLES
+    t_outtab      = lt_alvshow
+  EXCEPTIONS
+    program_error = 1
+    OTHERS        = 2.
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
